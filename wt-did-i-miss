@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unread — What Did I Miss?</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f5f6fc;color:#20223a;font-family:Arial,sans-serif}
+header{padding:20px 7%;background:white;border-bottom:1px solid #e6e7f0;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:23px;font-weight:bold;color:#6254df}
+.privacy{font-size:12px;color:#18794e;background:#e7f8ee;padding:8px 12px;border-radius:20px}
+main{max-width:1000px;margin:42px auto;padding:0 20px}
+.eyebrow{color:#6558e8;font-weight:bold;font-size:12px;letter-spacing:2px}
+h1{font-size:clamp(32px,5vw,48px);margin:12px 0}
+.intro{color:#69718a;line-height:1.7;max-width:650px}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
+.card{background:white;border:1px solid #e5e7f0;border-radius:18px;padding:22px;box-shadow:0 8px 25px #25234a08}
+h2{font-size:18px;margin-top:0}
+textarea{width:100%;height:260px;padding:14px;border:1px solid #d9dbea;border-radius:12px;resize:vertical;font:14px/1.6 Arial,sans-serif}
+button{cursor:pointer;border:0;border-radius:10px;padding:12px 15px;font-weight:bold}
+.primary{background:#6558e8;color:white;width:100%;margin-top:12px}
+.secondary{background:#efedff;color:#5144c5}
+.buttons{display:flex;gap:10px;margin-top:10px}
+.note{font-size:12px;color:#778096;line-height:1.6}
+#output{color:#69718a;line-height:1.7;overflow-wrap:anywhere}
+.item{background:#f6f6fc;padding:12px;margin:9px 0;border-radius:10px;color:#30334a}
+h3{font-size:15px;margin:20px 0 8px}
+.tag{font-size:11px;font-weight:bold;padding:4px 8px;border-radius:15px;background:#fff0d9;color:#895900}
+footer{text-align:center;color:#8990a2;font-size:12px;padding:28px}
+@media(max-width:700px){.layout{grid-template-columns:1fr}main{margin-top:25px}header{padding:16px 20px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">unread.</div>
+  <div class="privacy">● Processed on your device</div>
+</header>
+<main>
+  <div class="eyebrow">YOUR PERSONAL CHAT BRIEF</div>
+  <h1>What did I miss?</h1>
+  <p class="intro">Too many messages? Get a quick overview of important updates, tasks and deadlines without scrolling through every conversation.</p>
+  <div class="layout">
+    <section class="card">
+      <h2>Your conversation</h2>
+      <p class="note">Paste copied chat messages here, or try our sample.</p>
+      <textarea id="chat" placeholder="Paste your unread messages here..."></textarea>
+      <div class="buttons">
+        <button class="secondary" id="sample">Try sample</button>
+        <button class="secondary" id="clear">Clear</button>
+      </div>
+      <button class="primary" id="analyze">Find what I missed →</button>
+      <p class="note">This demo analyses text locally in your browser.</p>
+    </section>
+    <section class="card">
+      <h2>Your brief</h2>
+      <div id="output">Your summary and priorities will appear here.</div>
+    </section>
+  </div>
+</main>
+<footer>UNREAD · Less scrolling, more clarity.</footer>
+<script>
+const chat=document.getElementById("chat");
+const output=document.getElementById("output");
+document.getElementById("sample").onclick=()=>{
+chat.value=`Asha: The project review is tomorrow at 10 AM.
+Rahul: Everyone must submit slides by tonight.
+Priya: We decided to use React for the frontend.
+Arjun: Can someone share the final presentation?
+Asha: @Rahul please finish the slides today.
+Priya: Meeting moved to Room 204.
+Rahul: I will upload the final file before 8 PM.`;
+};
+document.getElementById("clear").onclick=()=>{
+chat.value="";
+output.textContent="Your summary and priorities will appear here.";
+};
+function escapeHTML(s){
+return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+document.getElementById("analyze").onclick=()=>{
+const text=chat.value.trim();
+if(!text){output.textContent="Paste a conversation first.";return;}
+const lines=text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+const deadline=/\b(today|tonight|tomorrow|deadline|due|urgent|asap|before \d|by \d)\b/i;
+const task=/\b(need to|must|please|submit|upload|send|finish|complete|prepare|bring|remind|don't forget)\b/i;
+const decision=/\b(decided|agreed|confirmed|approved|meeting moved|finalized)\b/i;
+const matches=(rule)=>[...new Set(lines.filter(s=>rule.test(s)))];
+const render=arr=>arr.length?arr.map(s=>`<div class="item">${escapeHTML(s)}</div>`).join(""):'<p class="note">Nothing obvious detected.</p>';
+const urgent=matches(deadline),tasks=matches(task),decisions=matches(decision);
+output.innerHTML=`<div class="item"><span class="tag">OVERVIEW</span><br>${lines.length} messages reviewed. ${urgent.length+tasks.length+decisions.length} possible important items found. Check the original messages to confirm.</div><h3>🔴 Deadlines & urgency</h3>${render(urgent)}<h3>✅ Possible tasks</h3>${render(tasks)}<h3>📌 Decisions & updates</h3>${render(decisions)}<h3>💬 Conversation preview</h3>${render(lines.slice(0,3))}<p class="note">Demo mode: this uses text-matching rules, not a real AI model. It may miss context or misclassify messages.</p><button class="secondary" id="copy">Copy brief</button>`;
+document.getElementById("copy").onclick=async()=>{
+try{await navigator.clipboard.writeText(output.innerText);document.getElementById("copy").textContent="Copied!";}
+catch{document.getElementById("copy").textContent="Copy unavailable — select the text manually.";}
+};
+};
+</script>
+</body>
+</html>

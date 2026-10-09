@@ -1,0 +1,351 @@
+Copy the entire HTML code below and save it as `signal.html`.
+
+html
+```
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal - Chat Organizer</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f4f0;
+            margin: 0;
+            padding: 20px;
+            color: #26352b;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #315b3b;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #667368;
+            margin-bottom: 25px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            border: 1px solid #cbd5ca;
+            border-radius: 8px;
+            font-size: 15px;
+            resize: vertical;
+        }
+
+        button {
+            background: #315b3b;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            margin: 8px 5px 8px 0;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #24462d;
+        }
+
+        .secondary {
+            background: #68796b;
+        }
+
+        .section {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f7f9f6;
+            border-radius: 9px;
+            border-left: 5px solid #527c58;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            font-size: 19px;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border: 1px solid #e0e6de;
+            border-radius: 6px;
+            overflow-wrap: anywhere;
+        }
+
+        .empty {
+            color: #7b857b;
+            font-style: italic;
+        }
+
+        .status {
+            color: #315b3b;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            color: #7b857b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 500px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Signal - Chat Organizer</h1>
+
+    <p class="subtitle">
+        Turn overwhelming conversations into clear priorities.
+    </p>
+
+    <h3>Paste Your Chat Conversation</h3>
+
+    <textarea id="chatInput"
+        placeholder="Enter chat messages here, one message per line..."></textarea>
+
+    <br>
+
+    <button onclick="analyzeChat()">Analyze Conversation</button>
+    <button class="secondary" onclick="loadExample()">Try Example</button>
+    <button class="secondary" onclick="clearAll()">Clear</button>
+
+    <p id="status" class="status"></p>
+
+    <div class="section">
+        <h2>Conversation Summary</h2>
+        <div id="summary" class="empty">
+            Your summary will appear here.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Important Action Items</h2>
+        <div id="actions" class="empty">
+            No action items identified yet.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Decisions Made</h2>
+        <div id="decisions" class="empty">
+            No decisions identified yet.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Questions Requiring Answers</h2>
+        <div id="questions" class="empty">
+            No questions identified yet.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Important Messages</h2>
+        <div id="important" class="empty">
+            Important messages will appear here.
+        </div>
+    </div>
+
+    <button onclick="copyResults()">Copy Results</button>
+
+    <div class="footer">
+        Signal Chat Organizer | Simple Student Project
+    </div>
+
+</div>
+
+<script>
+    function containsAny(text, keywords) {
+        return keywords.some(function(keyword) {
+            return text.includes(keyword);
+        });
+    }
+
+    function addMessages(elementId, messages) {
+        const element = document.getElementById(elementId);
+        element.replaceChildren();
+
+        if (messages.length === 0) {
+            element.textContent = "No matching messages found.";
+            element.className = "empty";
+            return;
+        }
+
+        element.className = "";
+
+        messages.forEach(function(message) {
+            const item = document.createElement("div");
+            item.className = "message";
+            item.textContent = message;
+            element.appendChild(item);
+        });
+    }
+
+    function analyzeChat() {
+        const input = document.getElementById("chatInput").value.trim();
+
+        if (!input) {
+            alert("Please enter a chat conversation first.");
+            return;
+        }
+
+        const lines = input.split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        const actionKeywords = [
+            "need to", "must", "will", "deadline",
+            "send", "finish", "complete", "upload",
+            "prepare", "confirm", "review", "by "
+        ];
+
+        const decisionKeywords = [
+            "approved", "decided", "agreed",
+            "confirmed", "final decision", "finalized"
+        ];
+
+        const actions = [];
+        const decisions = [];
+        const questions = [];
+        const important = [];
+
+        lines.forEach(function(line) {
+            const text = line.toLowerCase();
+
+            const isAction = containsAny(text, actionKeywords);
+            const isDecision = containsAny(text, decisionKeywords);
+            const isQuestion = line.includes("?");
+
+            if (isAction) {
+                actions.push(line);
+            }
+
+            if (isDecision) {
+                decisions.push(line);
+            }
+
+            if (isQuestion) {
+                questions.push(line);
+            }
+
+            if (isAction || isDecision || isQuestion) {
+                important.push(line);
+            }
+        });
+
+        document.getElementById("summary").textContent =
+            "Analyzed " + lines.length +
+            " messages. Found " + actions.length +
+            " possible action items, " + decisions.length +
+            " possible decisions, and " + questions.length +
+            " questions.";
+
+        document.getElementById("summary").className = "";
+
+        addMessages("actions", actions);
+        addMessages("decisions", decisions);
+        addMessages("questions", questions);
+        addMessages("important", important);
+
+        document.getElementById("status").textContent =
+            "Analysis completed successfully!";
+    }
+
+    function loadExample() {
+        document.getElementById("chatInput").value =
+`Maya: We need to finish the project by Friday.
+Alex: I will send the report tomorrow.
+Priya: The budget is approved.
+Maya: Who will handle testing?
+Alex: I will complete the testing before launch.
+Priya: We agreed to use the new design.
+Maya: Please confirm the final meeting time.`;
+
+        analyzeChat();
+    }
+
+    function clearAll() {
+        document.getElementById("chatInput").value = "";
+
+        ["summary", "actions", "decisions",
+         "questions", "important"].forEach(function(id) {
+            const element = document.getElementById(id);
+            element.textContent = "No results yet.";
+            element.className = "empty";
+        });
+
+        document.getElementById("status").textContent = "";
+    }
+
+    function copyResults() {
+        const ids = [
+            ["Conversation Summary", "summary"],
+            ["Action Items", "actions"],
+            ["Decisions", "decisions"],
+            ["Questions", "questions"],
+            ["Important Messages", "important"]
+        ];
+
+        const text = ids.map(function(entry) {
+            return entry[0] + ":\n" +
+                document.getElementById(entry[1]).innerText;
+        }).join("\n\n");
+
+        if (!navigator.clipboard) {
+            alert("Clipboard access is unavailable. Please copy the results manually.");
+            return;
+        }
+
+        navigator.clipboard.writeText(text)
+            .then(function() {
+                alert("Results copied successfully!");
+            })
+            .catch(function() {
+                alert("Could not copy results. Please copy them manually.");
+            });
+    }
+</script>
+
+</body>
+</html>
+```
+
+
+
+
+
